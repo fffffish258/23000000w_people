@@ -18,32 +18,103 @@ class Item(db.Model):
     def __repr__(self):
         return f'<Item {self.title}>'
 
-    @classmethod
-    def get_all_available(cls):
-        """取得所有狀態為 Available 且未過期的物品"""
-        now = datetime.utcnow().date()
-        return cls.query.filter(
-            cls.status == 'Available',
-            db.or_(
-                cls.expiry_date >= now,
-                cls.expiry_date == None
-            )
-        ).order_by(cls.created_at.desc()).all()
+    # --- CRUD Methods ---
 
     @classmethod
-    def get_by_category(cls, category):
-        """按分類篩選有效物品"""
-        now = datetime.utcnow().date()
-        return cls.query.filter(
-            cls.status == 'Available',
-            cls.category == category,
-            db.or_(
-                cls.expiry_date >= now,
-                cls.expiry_date == None
+    def create(cls, title, category, description=None, image_url=None, expiry_date=None):
+        """新增一筆物品記錄"""
+        try:
+            new_item = cls(
+                title=title,
+                category=category,
+                description=description,
+                image_url=image_url,
+                expiry_date=expiry_date
             )
-        ).order_by(cls.created_at.desc()).all()
+            db.session.add(new_item)
+            db.session.commit()
+            return new_item
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating item: {e}")
+            return None
+
+    @classmethod
+    def get_all(cls):
+        """取得所有記錄 (不論狀態)"""
+        try:
+            return cls.query.order_by(cls.created_at.desc()).all()
+        except Exception as e:
+            print(f"Error getting items: {e}")
+            return []
+
+    @classmethod
+    def get_by_id(cls, item_id):
+        """取得單筆記錄"""
+        try:
+            return cls.query.get(item_id)
+        except Exception as e:
+            print(f"Error getting item by id: {e}")
+            return None
+
+    def update(self, **kwargs):
+        """更新記錄內容"""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating item: {e}")
+            return False
+
+    def delete(self):
+        """刪除記錄"""
+        try:
+            db.session.delete(self)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error deleting item: {e}")
+            return False
+
+    # --- Specialized Search Methods ---
+
+    @classmethod
+    def get_all_available(cls, keyword=None, category=None):
+        """
+        取得所有狀態為 Available 且未過期的物品。
+        支援關鍵字搜尋與分類篩選。
+        """
+        try:
+            now = datetime.utcnow().date()
+            query = cls.query.filter(
+                cls.status == 'Available',
+                db.or_(
+                    cls.expiry_date >= now,
+                    cls.expiry_date == None
+                )
+            )
+
+            if keyword:
+                query = query.filter(
+                    db.or_(
+                        cls.title.contains(keyword),
+                        cls.description.contains(keyword)
+                    )
+                )
+            
+            if category and category != 'All':
+                query = query.filter(cls.category == category)
+
+            return query.order_by(cls.created_at.desc()).all()
+        except Exception as e:
+            print(f"Error filtering available items: {e}")
+            return []
 
     def mark_as_taken(self):
-        """標記為已領取"""
-        self.status = 'Taken'
-        db.session.commit()
+        """標記為已領取 (邏輯刪除)"""
+        return self.update(status='Taken')
