@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}首頁布告欄{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: white;
+        padding: 3rem 2rem;
+        border-radius: 24px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 3rem;
+        text-align: center;
+    }
+
+    .search-box {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .search-input {
+        border-radius: 50px 0 0 50px;
+        padding: 0.8rem 1.5rem;
+        border: 1px solid #eee;
+    }
+
+    .search-btn {
+        border-radius: 0 50px 50px 0;
+        padding: 0 1.5rem;
+    }
+
+    .category-pills {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .category-pill {
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        background: white;
+        border: 1px solid #eee;
+        color: #666;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .category-pill.active {
+        background: var(--primary-gradient);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 4px 10px rgba(118, 75, 162, 0.2);
+    }
+
+    .item-card {
+        border: none;
+        border-radius: 20px;
+        background: white;
+        box-shadow: var(--card-shadow);
+        transition: transform 0.3s;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .item-card:hover {
+        transform: translateY(-8px);
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .badge-food {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .badge-misc {
+        background-color: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    .expiry-warning {
+        font-size: 0.85rem;
+        color: #d32f2f;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        padding: 5rem 0;
+        text-align: center;
+        color: #999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 歡迎與搜尋區 -->
+<div class="hero-section">
+    <h1 class="mb-3">尋找你的下一個驚喜 🎁</h1>
+    <p class="text-muted mb-4">校園剩食與雜物互助平台，讓資源更有效地循環利用。</p>
+    
+    <form action="{{ url_for('main.index') }}" method="GET" class="search-box">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control search-input" placeholder="搜尋物品名稱或關鍵字..." value="{{ q }}">
+            <input type="hidden" name="cat" value="{{ cat }}">
+            <button class="btn btn-primary-custom search-btn" type="submit">搜尋</button>
+        </div>
+    </form>
+
+    <div class="category-pills">
+        <a href="{{ url_for('main.index', q=q, cat='All') }}" class="category-pill {% if cat == 'All' %}active{% endif %}">全部</a>
+        <a href="{{ url_for('main.index', q=q, cat='Food') }}" class="category-pill {% if cat == 'Food' %}active{% endif %}">🍲 食品</a>
+        <a href="{{ url_for('main.index', q=q, cat='Misc') }}" class="category-pill {% if cat == 'Misc' %}active{% endif %}">📦 雜物</a>
+    </div>
+</div>
+
+<!-- 物品列表 -->
+<div class="row g-4">
+    {% for item in items %}
+    <div class="col-md-6 col-lg-4">
+        <div class="item-card">
+            <a href="{{ url_for('main.item_detail', id=item.id) }}">
+                {% if item.image_url %}
+                    <img src="{{ item.image_url }}" class="item-thumbnail" alt="{{ item.title }}">
+                {% else %}
+                    <div class="item-thumbnail d-flex align-items-center justify-content-center bg-light text-muted">
+                        無圖片
+                    </div>
+                {% endif %}
+            </a>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge {% if item.category == 'Food' %}badge-food{% else %}badge-misc{% endif %} rounded-pill px-3 py-2">
+                        {{ '食品' if item.category == 'Food' else '雜物' }}
+                    </span>
+                    <small class="text-muted">{{ item.created_at.strftime('%Y/%m/%d') }}</small>
+                </div>
+                <h5 class="card-title fw-bold mb-3">
+                    <a href="{{ url_for('main.item_detail', id=item.id) }}" class="text-decoration-none text-dark">
+                        {{ item.title }}
+                    </a>
+                </h5>
+                
+                {% if item.category == 'Food' and item.expiry_date %}
+                <p class="expiry-warning mb-3">
+                    <i class="bi bi-clock"></i> 有效日期：{{ item.expiry_date }}
+                </p>
+                {% endif %}
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{{ url_for('main.item_detail', id=item.id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">查看詳情</a>
+                    <form action="{{ url_for('main.take_item', id=item.id) }}" method="POST" onsubmit="return confirm('確定已領取此物品？');">
+                        <button type="submit" class="btn btn-primary-custom btn-sm">我領取了</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 empty-state">
+        <h3>🔍 哎呀！找不到相關物品</h3>
+        <p>試試看其他的關鍵字，或者切換分類看看吧！</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

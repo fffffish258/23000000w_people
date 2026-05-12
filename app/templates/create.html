@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}發佈新物品{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 3rem;
+        border-radius: 24px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 12px;
+        padding: 0.8rem 1.2rem;
+        border: 1px solid #eee;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-control:focus {
+        border-color: #764ba2;
+        box-shadow: 0 0 0 0.25rem rgba(118, 75, 162, 0.1);
+    }
+
+    .preview-image {
+        max-width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 12px;
+        margin-top: 1rem;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">發佈物資 🤝</h2>
+        <p class="text-muted">填寫以下資訊，讓有需要的人能找到它。</p>
+    </div>
+
+    <form action="{{ url_for('main.create_item') }}" method="POST">
+        <div class="row">
+            <!-- 標題 -->
+            <div class="col-md-12">
+                <label for="title" class="form-label">物品名稱 *</label>
+                <input type="text" name="title" id="title" class="form-control" placeholder="例如：好吃的紅豆餅、沒用過的筆記本" required>
+            </div>
+
+            <!-- 分類 -->
+            <div class="col-md-6">
+                <label for="category" class="form-label">分類 *</label>
+                <select name="category" id="category" class="form-select" onchange="toggleExpiryField()">
+                    <option value="Misc">📦 雜物</option>
+                    <option value="Food">🍲 食品</option>
+                </select>
+            </div>
+
+            <!-- 有效日期 (僅食品) -->
+            <div class="col-md-6" id="expiry_field" style="display: none;">
+                <label for="expiry_date" class="form-label">有效日期 *</label>
+                <input type="date" name="expiry_date" id="expiry_date" class="form-control">
+            </div>
+
+            <!-- 圖片連結 -->
+            <div class="col-md-12">
+                <label for="image_url" class="form-label">圖片網址</label>
+                <input type="url" name="image_url" id="image_url" class="form-control" placeholder="貼上圖片 URL (例如來自 Imgur 或 Google 相簿)" oninput="previewImg()">
+                <img id="img_preview" class="preview-image" alt="圖片預覽">
+            </div>
+
+            <!-- 描述 -->
+            <div class="col-md-12">
+                <label for="description" class="form-label">詳細描述 / 領取地點</label>
+                <textarea name="description" id="description" class="form-control" rows="4" placeholder="請描述物品現況、領取時間及約定地點..."></textarea>
+            </div>
+
+            <div class="col-md-12 mt-4 text-center">
+                <button type="submit" class="btn btn-primary-custom w-100 py-3">立即發佈</button>
+                <a href="{{ url_for('main.index') }}" class="btn btn-link mt-3 text-decoration-none text-muted">取消並返回</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleExpiryField() {
+        const category = document.getElementById('category').value;
+        const expiryField = document.getElementById('expiry_field');
+        const expiryInput = document.getElementById('expiry_date');
+        
+        if (category === 'Food') {
+            expiryField.style.display = 'block';
+            expiryInput.required = true;
+        } else {
+            expiryField.style.display = 'none';
+            expiryInput.required = false;
+        }
+    }
+
+    function previewImg() {
+        const url = document.getElementById('image_url').value;
+        const preview = document.getElementById('img_preview');
+        
+        if (url) {
+            preview.src = url;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}
