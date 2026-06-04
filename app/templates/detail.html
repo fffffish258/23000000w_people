@@ -110,6 +110,8 @@
                         <button type="submit" class="btn btn-primary-custom w-100 py-3">我領取了</button>
                     </form>
                     
+                    <a href="{{ url_for('main.edit_item', id=item.id) }}" class="btn btn-outline-secondary w-100 py-2 mb-2">編輯此資訊</a>
+
                     <form action="{{ url_for('main.delete_item', id=item.id) }}" method="POST" onsubmit="return confirm('確定要刪除此發佈資訊？此動作無法復原。');">
                         <button type="submit" class="btn btn-outline-danger w-100 py-2 border-0">刪除此資訊</button>
                     </form>
