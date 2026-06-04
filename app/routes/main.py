@@ -115,3 +115,43 @@ def delete_item(id):
     else:
         flash("找不到該物品。", "warning")
     return redirect(url_for('main.index'))
+
+@main_bp.route('/items/<int:id>/edit', methods=['GET', 'POST'])
+def edit_item(id):
+    """
+    編輯物品。
+    """
+    item = Item.get_by_id(id)
+    if not item:
+        flash("找不到該物品！", "warning")
+        return redirect(url_for('main.index'))
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        category = request.form.get('category', 'Misc')
+        description = request.form.get('description', '').strip()
+        image_url = request.form.get('image_url', '').strip()
+        expiry_date_str = request.form.get('expiry_date', '')
+
+        if not title:
+            flash("物品名稱是必填的！", "danger")
+            return render_template('edit.html', item=item)
+
+        expiry_date = None
+        if category == 'Food':
+            if not expiry_date_str:
+                flash("食品類物品必須填寫有效日期！", "danger")
+                return render_template('edit.html', item=item)
+            try:
+                expiry_date = datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                flash("日期格式不正確，請使用 YYYY-MM-DD", "danger")
+                return render_template('edit.html', item=item)
+
+        if item.update(title=title, category=category, description=description, image_url=image_url, expiry_date=expiry_date):
+            flash(f"「{title}」已成功更新！", "success")
+            return redirect(url_for('main.item_detail', id=item.id))
+        else:
+            flash("更新失敗，請稍後再試。", "danger")
+            
+    return render_template('edit.html', item=item)
