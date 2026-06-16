@@ -1,15 +1,15 @@
-# Python cache files
+# Python
+.venv/
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
 
-# Environments
-.venv/
-env/
-venv/
-ENV/
-
-# Local databases & configurations
+# Flask instance folder (contains database)
 instance/
+
+# Environment variables
 .env
+
+# OS
+.DS_Store
+Thumbs.db
